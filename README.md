@@ -18,7 +18,7 @@
     ╚══════════════════════════════════════════════════════════╝
 ```
 
-> *"There is no five ones."* — someone, probably lying
+> *"There are no five ones."* — someone, probably lying
 
 ![Dice roll](https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif)
 
