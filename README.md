@@ -1,4 +1,4 @@
-# 🎲 ROLLER — Game Day Plan 🎲
+# 🎲 ROLLER — Polygence Coding Challenge 2026 Plan 🎲
 
 ```
     ╔══════════════════════════════════════════════════════════╗
