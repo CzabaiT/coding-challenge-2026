@@ -1,8 +1,10 @@
 import { RollerAgent } from "./lib/agent.js";
+import { BetStore } from "./lib/betStore.js";
+import { createLogger } from "./lib/logger.js";
 import {
   CompositeStrategy,
   OpeningBetStrategy,
-  SimpleDudoStrategy,
+  OpponentAwareDudoStrategy,
 } from "./lib/strategy.js";
 
 const config = {
@@ -11,16 +13,28 @@ const config = {
   secret: process.env.ROLLER_SECRET ?? "roller-dev-secret",
 };
 
+// One BetStore shared between the agent (which records opponents' bets) and the
+// response strategy (which reads their history back out) so the bot can adapt
+// to how each team plays.
+const logger = createLogger();
+const betStore = new BetStore({ logger });
+
 // Two dedicated strategies, routed by turn type:
 //   - opening  → used when we're first to bet in a round
-//   - response → Neller's SimpleDudoPlayer: strongest bid still ≥ 50% likely,
-//                otherwise call. Reacts to another team's bet (call or raise).
+//   - response → SimpleDudo raise, but the decision to *challenge* is shaded by
+//                the standing bidder's recorded bluff rate: call habitual
+//                bluffers on thinner evidence, give honest bidders more rope.
 const strategy = new CompositeStrategy({
   opening: new OpeningBetStrategy({ openingFraction: 1 / 3 }),
-  response: new SimpleDudoStrategy({ threshold: 0.5 }),
+  response: new OpponentAwareDudoStrategy({
+    threshold: 0.5,
+    callThreshold: 0.5,
+    bluffWeight: 0.4,
+    opponents: betStore,
+  }),
 });
 
-const agent = new RollerAgent({ ...config, strategy });
+const agent = new RollerAgent({ ...config, strategy, logger, betStore });
 agent.connect();
 
 // Last-resort safety nets: log instead of crashing so the agent's own
