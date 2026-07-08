@@ -2,7 +2,7 @@ import { RollerAgent } from "./lib/agent.js";
 import {
   CompositeStrategy,
   OpeningBetStrategy,
-  ProbabilityStrategy,
+  SimpleDudoStrategy,
 } from "./lib/strategy.js";
 
 const config = {
@@ -13,10 +13,11 @@ const config = {
 
 // Two dedicated strategies, routed by turn type:
 //   - opening  → used when we're first to bet in a round
-//   - response → used when reacting to another team's bet (call or raise)
+//   - response → Neller's SimpleDudoPlayer: strongest bid still ≥ 50% likely,
+//                otherwise call. Reacts to another team's bet (call or raise).
 const strategy = new CompositeStrategy({
   opening: new OpeningBetStrategy({ openingFraction: 1 / 3 }),
-  response: new ProbabilityStrategy({ callMargin: 1.0, onesCallMargin: 0.75 }),
+  response: new SimpleDudoStrategy({ threshold: 0.5 }),
 });
 
 const agent = new RollerAgent({ ...config, strategy });
