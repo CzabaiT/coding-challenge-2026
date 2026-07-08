@@ -1,5 +1,9 @@
 import { RollerAgent } from "./lib/agent.js";
-import { CappedSixesStrategy } from "./lib/strategy.js";
+import {
+  CompositeStrategy,
+  OpeningBetStrategy,
+  ProbabilityStrategy,
+} from "./lib/strategy.js";
 
 const config = {
   host: process.env.ROLLER_HOST ?? "ws://10.236.120.188:4000",
@@ -7,9 +11,13 @@ const config = {
   secret: process.env.ROLLER_SECRET ?? "roller-dev-secret",
 };
 
-// Bet only on 6s, never claiming more than 1/3 of the dice in play.
-// Swap this for your own `Strategy` subclass to change how the bot plays.
-const strategy = new CappedSixesStrategy({ fraction: 1 / 3, value: 6 });
+// Two dedicated strategies, routed by turn type:
+//   - opening  → used when we're first to bet in a round
+//   - response → used when reacting to another team's bet (call or raise)
+const strategy = new CompositeStrategy({
+  opening: new OpeningBetStrategy({ openingFraction: 1 / 3 }),
+  response: new ProbabilityStrategy({ callMargin: 1.0, onesCallMargin: 0.75 }),
+});
 
 const agent = new RollerAgent({ ...config, strategy });
 agent.connect();
