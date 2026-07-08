@@ -24,12 +24,26 @@ const betStore = new BetStore({ logger });
 //   - response → SimpleDudo raise, but the decision to *challenge* is shaded by
 //                the standing bidder's recorded bluff rate: call habitual
 //                bluffers on thinner evidence, give honest bidders more rope.
+//
+// Tuning (from data/opponent-bets.json + sim/): our old config always bid the
+// *strongest* safe claim at the 50% edge, so in large-dice games it leapt
+// straight to the distribution mean (e.g. an opening response of 179×4) — a
+// coin flip opponents could just call. That made us the most-caught bidder
+// (bluffRate ~0.65) and got us eliminated 4th. The fixes, all validated in sim
+// across both small- (25 dice) and large- (100+ dice) regimes:
+//   - raiseStyle "minimal": make the smallest safe raise instead of jumping to
+//     the mean, so we never volunteer a coin-flip bet and keep our options open.
+//   - openingFraction 1/4 (was 1/3): open comfortably below the expected count.
+//   - callThreshold 0.4 (was 0.5): slightly less trigger-happy on challenges.
+// With minimal raises we no longer need a high safety bar, so threshold stays at
+// the intuitive 0.5 (raise only into bids more likely true than not).
 const strategy = new CompositeStrategy({
-  opening: new OpeningBetStrategy({ openingFraction: 1 / 3 }),
+  opening: new OpeningBetStrategy({ openingFraction: 1 / 4 }),
   response: new OpponentAwareDudoStrategy({
     threshold: 0.5,
-    callThreshold: 0.5,
+    callThreshold: 0.4,
     bluffWeight: 0.4,
+    raiseStyle: "minimal",
     opponents: betStore,
   }),
 });
